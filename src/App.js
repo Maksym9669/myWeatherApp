@@ -7,6 +7,20 @@ import Graph from "./components/Graph";
 import "./App.css";
 import axios from "axios";
 
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
 class App extends Component {
   constructor(props) {
     super(props);
@@ -20,7 +34,8 @@ class App extends Component {
       graphComponentData: [],
       lat: "",
       lon: "",
-      uvIndex: null
+      uvIndex: null,
+      indexForToday: 0
     };
   }
   componentDidMount() {
@@ -43,6 +58,17 @@ class App extends Component {
       console.log("GeoLocation not supported...Update the browser fella");
     }
   }
+  onIndexForTodayChange = newIndex => {
+    this.setState(
+      {
+        indexForToday: newIndex
+      },
+      function() {
+        // console.log(this.state.indexForToday);
+        this.notifyStateChange();
+      }
+    );
+  };
 
   onUnitChange = newUnit => {
     this.setState(
@@ -77,19 +103,19 @@ class App extends Component {
           console.log("Forecast Data:", forecastData);
           // Extract component specific data...
           const navbarData = this.extractDataForNavbar(forecastData);
+          const {
+            listComponentData
+            //   graphComponentData
+          } = this.extractDataForListAndGraphComponent(forecastData);
           const todayComponentData = this.extractDataForTodayComponent(
             forecastData
           );
-          // const {
-          //   listComponentData,
-          //   graphComponentData
-          // } = this.extractDataForListAndGraphComponent(forecastData);
 
           this.setState({
             navbarData,
             todayComponentData,
-            // listComponentData,
-            // graphComponentData
+            listComponentData,
+            // graphComponentData,
             lat: forecastData.city.coord.lat,
             lon: forecastData.city.coord.lon
           });
@@ -114,6 +140,8 @@ class App extends Component {
   fetchWeatherForecast = hasLatLng => {
     const API_KEY = "f52e83dffc7d0cf73311fcb22abfab18";
     const BASE_URL = "https://api.openweathermap.org/data/2.5/forecast";
+    // const BASE_URL = "https://api.openweathermap.org/data/2.5/forecast/daily";
+
     const queryParams = hasLatLng
       ? `lat=${this.state.latLng[0]}&lon=${this.state.latLng[1]}`
       : `q=${this.state.queryString}`;
@@ -124,7 +152,7 @@ class App extends Component {
         ? "imperial"
         : "standard";
 
-    const url = `${BASE_URL}?${queryParams}&units=${unitType}&cnt=7&appid=${API_KEY}`;
+    const url = `${BASE_URL}?${queryParams}&units=${unitType}&cnt=40&appid=${API_KEY}`;
 
     return axios
       .get(url)
@@ -176,9 +204,12 @@ class App extends Component {
       "November",
       "December"
     ];
-
-    const todayForecast = forecastData.list[0];
-
+    console.log(forecastData);
+    const todayForecast = forecastData.list[this.state.indexForToday];
+    // const todayForecast = this.state.listComponentData[
+    //   this.state.indexForToday
+    // ];
+    console.log(todayForecast);
     const time = new Date(todayForecast.dt * 1000);
     const day = this.getDay(time);
     const date = `${
@@ -213,9 +244,57 @@ class App extends Component {
       humidity,
       windSpeed
     };
-    console.log(result);
+    // console.log(result);
     return result;
   };
+
+  extractDataForListAndGraphComponent = forecastData => {
+    console.log(forecastData);
+    const listComponentData = [];
+    // const graphComponentData = [];
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+    forecastData.list.forEach(forecast => {
+      if (
+        forecastData.list.indexOf(forecast) % 8 == 0 ||
+        forecastData.list.indexOf(forecast) == forecastData.list.length - 1
+      ) {
+        let item = {};
+        item.day = this.getDay(forecast.dt * 1000);
+        let time = new Date(forecast.dt * 1000);
+        item.date = `${
+          monthNames[time.getMonth()]
+        } ${time.getDate()}, ${time.getFullYear()}`;
+        item.weatherId = forecast.weather[0].id;
+        item.description = forecast.weather[0].description;
+        item.mainTemperature = Math.round(forecast.main.temp);
+        item.pressure = forecast.main.pressure;
+        item.humidity = forecast.main.humidity;
+        listComponentData.push(item);
+      }
+
+      // graphComponentData.push(forecast.temp.day);
+    });
+
+    console.log(listComponentData);
+    return {
+      listComponentData
+      // graphComponentData
+    };
+  };
+
   // Takes date object or unix timestamp in ms and returns day string
   getDay = time => {
     const dayNames = [
@@ -223,7 +302,7 @@ class App extends Component {
       "Monday",
       "Tuesday",
       "Wednesday",
-      "Thursday ",
+      "Thursday",
       "Friday",
       "Saturday"
     ];
@@ -245,7 +324,10 @@ class App extends Component {
           uvIndex={this.state.uvIndex}
         />
         <div className="app-list-graph">
-          <List />
+          <List
+            data={this.state.listComponentData}
+            onIndexForTodayChange={this.onIndexForTodayChange}
+          />
           <Graph />
         </div>
       </div>
