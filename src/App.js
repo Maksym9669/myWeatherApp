@@ -204,8 +204,10 @@ class App extends Component {
       "November",
       "December"
     ];
-    console.log(forecastData);
-    const todayForecast = forecastData.list[this.state.indexForToday];
+    console.log("This is forecast data for today component", forecastData);
+    let newIndex =
+      this.state.indexForToday == 5 ? 39 : this.state.indexForToday * 8;
+    const todayForecast = forecastData.list[newIndex];
     // const todayForecast = this.state.listComponentData[
     //   this.state.indexForToday
     // ];
