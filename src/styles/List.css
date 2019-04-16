@@ -13,9 +13,10 @@
   flex: 30%;
   padding: 4px;
   margin: 4px;
-  border-radius: 2px;
+  border-radius: 10px;
   border-bottom: 3px solid #2e17fe;
   background-color: rgb(0, 123, 255);
+  cursor: pointer;
 }
 .li-info-container {
   display: flex;
