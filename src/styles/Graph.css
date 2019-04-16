@@ -1,3 +1,22 @@
+.graph-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 50%;
+  justify-content: flex-end;
+  color: white;
+  font-size: 1.3rem;
+}
+
 .graph {
-  background-color: red;
+  padding: 0px 4px;
+  margin-top: 4px;
+}
+
+.graph-info {
+  align-self: center;
+  margin: 10px;
+}
+
+.graph-info > span {
+  padding: 4px;
 }

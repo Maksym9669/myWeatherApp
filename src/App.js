@@ -64,7 +64,6 @@ class App extends Component {
         indexForToday: newIndex
       },
       function() {
-        // console.log(this.state.indexForToday);
         this.notifyStateChange();
       }
     );
@@ -76,7 +75,7 @@ class App extends Component {
         unit: newUnit
       },
       this.notifyStateChange
-    ); //this
+    );
     console.log(newUnit);
   };
 
@@ -87,25 +86,22 @@ class App extends Component {
         latLng: []
       },
       this.notifyStateChange
-    ); //this
-    // this.state.queryString = query;
-    // this.state.latLng = [];
+    );
   };
 
   notifyStateChange = () => {
     const hasLatLng = this.state.latLng.length > 0;
     const hasCityOrZipcode = this.state.queryString !== "";
 
-    //If we have geolocation information or searchbox if filled with zipcode or city name, we make get request and extract data from the response to different parts of state.
     if (hasLatLng || hasCityOrZipcode) {
       this.fetchWeatherForecast(hasLatLng)
         .then(forecastData => {
           console.log("Forecast Data:", forecastData);
-          // Extract component specific data...
+
           const navbarData = this.extractDataForNavbar(forecastData);
           const {
-            listComponentData
-            //   graphComponentData
+            listComponentData,
+            graphComponentData
           } = this.extractDataForListAndGraphComponent(forecastData);
           const todayComponentData = this.extractDataForTodayComponent(
             forecastData
@@ -115,7 +111,7 @@ class App extends Component {
             navbarData,
             todayComponentData,
             listComponentData,
-            // graphComponentData,
+            graphComponentData,
             lat: forecastData.city.coord.lat,
             lon: forecastData.city.coord.lon
           });
@@ -123,10 +119,16 @@ class App extends Component {
         .then(() => {
           this.fetchUVIndex(hasLatLng)
             .then(uvIndexData => {
-              console.log("UV index fetched", uvIndexData);
-              this.setState({
-                uvIndex: uvIndexData.value
-              });
+              console.log("This is UV index data", uvIndexData);
+              if (this.state.indexForToday != 0) {
+                this.setState({
+                  uvIndex: uvIndexData[this.state.indexForToday - 1].value
+                });
+              } else {
+                this.setState({
+                  uvIndex: uvIndexData.value
+                });
+              }
             })
             .catch(() => {});
         })
@@ -167,11 +169,22 @@ class App extends Component {
 
   fetchUVIndex = hasLatLng => {
     const API_KEY = "f52e83dffc7d0cf73311fcb22abfab18";
-    const BASE_URL = "https://api.openweathermap.org/data/2.5/uvi";
-    const queryParams = hasLatLng
-      ? `lat=${this.state.latLng[0]}&lon=${this.state.latLng[1]}`
-      : `lat=${this.state.lat}&lon=${this.state.lon}`;
-    const url = `${BASE_URL}?${queryParams}&appid=${API_KEY}`;
+    let url = "";
+    if (this.state.indexForToday == 0) {
+      const API_KEY = "f52e83dffc7d0cf73311fcb22abfab18";
+      const BASE_URL = "https://api.openweathermap.org/data/2.5/uvi";
+      const queryParams = hasLatLng
+        ? `lat=${this.state.latLng[0]}&lon=${this.state.latLng[1]}`
+        : `lat=${this.state.lat}&lon=${this.state.lon}`;
+      url = `${BASE_URL}?${queryParams}&appid=${API_KEY}`;
+    } else {
+      const BASE_URL = "https://api.openweathermap.org/data/2.5/uvi/forecast";
+      const queryParams = hasLatLng
+        ? `lat=${this.state.latLng[0]}&lon=${this.state.latLng[1]}`
+        : `lat=${this.state.lat}&lon=${this.state.lon}`;
+      url = `${BASE_URL}?${queryParams}&appid=${API_KEY}&cnt=4`;
+    }
+
     return axios
       .get(url)
       .then(response => {
@@ -253,7 +266,7 @@ class App extends Component {
   extractDataForListAndGraphComponent = forecastData => {
     console.log(forecastData);
     const listComponentData = [];
-    // const graphComponentData = [];
+    const graphComponentData = [];
     const monthNames = [
       "January",
       "February",
@@ -285,15 +298,14 @@ class App extends Component {
         item.pressure = forecast.main.pressure;
         item.humidity = forecast.main.humidity;
         listComponentData.push(item);
+        graphComponentData.push(item.mainTemperature);
       }
-
-      // graphComponentData.push(forecast.temp.day);
     });
 
     console.log(listComponentData);
     return {
-      listComponentData
-      // graphComponentData
+      listComponentData,
+      graphComponentData
     };
   };
 
@@ -330,7 +342,7 @@ class App extends Component {
             data={this.state.listComponentData}
             onIndexForTodayChange={this.onIndexForTodayChange}
           />
-          <Graph />
+          <Graph data={this.state.graphComponentData} />
         </div>
       </div>
     );

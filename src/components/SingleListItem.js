@@ -34,7 +34,6 @@ export default class SingleListItem extends Component {
         <div className="li-weather-icon">
           <i className={`wi wi-owm-${weatherId} ${iconClass}`} />
         </div>
-        <div>{this.props.listId}</div>
       </div>
     );
   }
